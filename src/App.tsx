@@ -30,7 +30,8 @@ import {
   Clipboard,
   AlertTriangle,
   SearchX,
-  RefreshCw
+  RefreshCw,
+  Loader2
 } from 'lucide-react';
 import { getInitialRecordsFromRaw } from './data/rawDatabase';
 import { ContactRecord } from './types';
@@ -43,6 +44,7 @@ export default function App() {
   const [currentContact, setCurrentContact] = useState<ContactRecord | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [notFound, setNotFound] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [searchedTerm, setSearchedTerm] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -64,10 +66,12 @@ export default function App() {
       setCurrentContact(null);
       setNotFound(false);
       setHasSearched(false);
+      setIsLoading(false);
       return;
     }
 
     setSearchedTerm(query);
+    setIsLoading(true);
 
     const parsed = parseFbUidInput(query);
     const targetClean = parsed.cleaned.toLowerCase();
@@ -98,16 +102,20 @@ export default function App() {
       return false;
     });
 
-    if (found) {
-      setCurrentContact(found);
-      setNotFound(false);
-      setHasSearched(true);
-    } else {
-      // No match found in database
-      setCurrentContact(null);
-      setNotFound(true);
-      setHasSearched(true);
-    }
+    // Realistic smooth brief loading delay (600ms)
+    setTimeout(() => {
+      setIsLoading(false);
+      if (found) {
+        setCurrentContact(found);
+        setNotFound(false);
+        setHasSearched(true);
+      } else {
+        // No match found in database
+        setCurrentContact(null);
+        setNotFound(true);
+        setHasSearched(true);
+      }
+    }, 600);
   };
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
@@ -149,6 +157,7 @@ export default function App() {
     setNotFound(false);
     setHasSearched(false);
     setSearchedTerm('');
+    setIsLoading(false);
   };
 
   const operatorInfo = currentContact ? detectBdOperator(currentContact.phone) : null;
@@ -254,10 +263,20 @@ export default function App() {
               {/* Glowing Search CTA Button */}
               <button
                 type="submit"
-                className="bg-gradient-to-r from-[#0066ff] to-[#0099ff] hover:from-[#0055ee] hover:to-[#0088ee] active:scale-95 text-white font-bold text-xs sm:text-sm px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl flex items-center space-x-1.5 shadow-[0_0_25px_rgba(0,102,255,0.65)] hover:shadow-[0_0_35px_rgba(0,153,255,0.9)] transition-all shrink-0 select-none"
+                disabled={isLoading}
+                className="bg-gradient-to-r from-[#0066ff] to-[#0099ff] hover:from-[#0055ee] hover:to-[#0088ee] disabled:opacity-85 disabled:cursor-wait active:scale-95 text-white font-bold text-xs sm:text-sm px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl flex items-center space-x-1.5 shadow-[0_0_25px_rgba(0,102,255,0.65)] hover:shadow-[0_0_35px_rgba(0,153,255,0.9)] transition-all shrink-0 select-none"
               >
-                <Search className="w-4 h-4" />
-                <span>Search</span>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>খোঁজা হচ্ছে...</span>
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4" />
+                    <span>Search</span>
+                  </>
+                )}
               </button>
 
             </div>
@@ -276,8 +295,35 @@ export default function App() {
           </div>
         </form>
 
+        {/* Loading State Indicator */}
+        {isLoading && (
+          <div className="bg-[#061836] border border-sky-500/30 rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-2xl animate-fade-in relative overflow-hidden">
+            {/* Ambient Animated Glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-sky-500/15 blur-3xl pointer-events-none rounded-full" />
+            
+            {/* Pulsing Radar Ring & Spinner */}
+            <div className="relative mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-b from-sky-500/20 to-blue-600/10 border border-sky-500/40 text-sky-400 flex items-center justify-center shadow-[0_0_35px_rgba(0,132,255,0.35)]">
+              <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin text-[#0084ff]" />
+            </div>
+
+            <div className="space-y-1.5 max-w-sm mx-auto">
+              <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+                ডাটাবেজে তথ্য খোঁজা হচ্ছে...
+              </h3>
+              <p className="text-xs text-slate-300">
+                পাবলিক রেকর্ড ও ফেসবুক UID সার্ভার স্ক্যান করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন
+              </p>
+            </div>
+
+            {/* Glowing animated progress line */}
+            <div className="max-w-xs mx-auto h-1.5 bg-[#0a2347] rounded-full overflow-hidden p-0.5 border border-[#163c70]">
+              <div className="h-full bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 rounded-full animate-pulse w-4/5 mx-auto" />
+            </div>
+          </div>
+        )}
+
         {/* 1. FRESH INITIAL STATE (When first opening the site) */}
-        {!hasSearched && (
+        {!hasSearched && !isLoading && (
           <div className="space-y-4 animate-fade-in">
             
             {/* Fresh Welcome Card */}
@@ -300,7 +346,7 @@ export default function App() {
         )}
 
         {/* 2. NOT FOUND NOTICE CARD (When search yields no match) */}
-        {hasSearched && notFound && (
+        {!isLoading && hasSearched && notFound && (
           <div className="bg-[#061836] border border-amber-500/30 rounded-3xl p-6 sm:p-8 text-center space-y-5 shadow-2xl animate-fade-in relative overflow-hidden">
             
             {/* Ambient background glow */}
@@ -362,7 +408,7 @@ export default function App() {
         )}
 
         {/* 3. SEARCH RESULT: Facebook Profile Header Card */}
-        {hasSearched && currentContact && (
+        {!isLoading && hasSearched && currentContact && (
           <div className="bg-[#061836] border border-[#11315e] rounded-3xl overflow-hidden shadow-2xl animate-fade-in">
             
             {/* Cover Photo / Header Banner */}
@@ -490,7 +536,7 @@ export default function App() {
         )}
 
         {/* 3. "Profile Information" Card (Pure Data Info) */}
-        {hasSearched && currentContact && (
+        {!isLoading && hasSearched && currentContact && (
           <div className="bg-[#061836] border border-[#11315e] rounded-3xl p-5 sm:p-6 shadow-xl animate-fade-in">
             
             {/* Header */}
