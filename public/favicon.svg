@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0056D2" />
+      <stop offset="50%" stop-color="#0064E0" />
+      <stop offset="100%" stop-color="#0099FF" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded App Icon Background -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" />
+  <rect x="1" y="1" width="62" height="62" rx="15" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.5" />
+
+  <!-- Stylized Facebook 'f' in Pure White -->
+  <path d="M41 33.5H35V54H26V33.5H21V25.5H26V20.2C26 14.8 29.2 11 36.3 11C39 11 41.5 11.4 41.5 11.4V19.1H38.1C35.4 19.1 34.6 20.7 34.6 22.8V25.5H41.4L41 33.5Z" fill="#FFFFFF" filter="url(#shadow)" />
+
+  <!-- Search / Scan Lens Badge in Bottom-Right -->
+  <circle cx="47" cy="47" r="12" fill="#04132B" stroke="#00D2FF" stroke-width="2" />
+  <circle cx="45" cy="45" r="4" stroke="#00D2FF" stroke-width="2" fill="none" />
+  <line x1="48" y1="48" x2="53" y2="53" stroke="#00D2FF" stroke-width="2.2" stroke-linecap="round" />
+</svg>
