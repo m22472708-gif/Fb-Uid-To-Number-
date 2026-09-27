@@ -1,0 +1,7 @@
+{
+  "name": "FB UID & Number Lookup Portal",
+  "description": "Fast, responsive Facebook UID and mobile number contact directory with beautiful profile cards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
