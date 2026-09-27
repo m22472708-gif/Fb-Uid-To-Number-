@@ -31,7 +31,9 @@ import {
   AlertTriangle,
   SearchX,
   RefreshCw,
-  Loader2
+  Loader2,
+  Code2,
+  Send
 } from 'lucide-react';
 import { getInitialRecordsFromRaw } from './data/rawDatabase';
 import { ContactRecord } from './types';
@@ -45,6 +47,8 @@ export default function App() {
   const [hasSearched, setHasSearched] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStepText, setLoadingStepText] = useState('ডাটাবেজে তথ্য খোঁজা হচ্ছে...');
   const [searchedTerm, setSearchedTerm] = useState('');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -72,6 +76,8 @@ export default function App() {
 
     setSearchedTerm(query);
     setIsLoading(true);
+    setLoadingProgress(20);
+    setLoadingStepText('সার্ভারের সাথে সংযোগ স্থাপন করা হচ্ছে...');
 
     const parsed = parseFbUidInput(query);
     const targetClean = parsed.cleaned.toLowerCase();
@@ -102,8 +108,21 @@ export default function App() {
       return false;
     });
 
-    // Realistic smooth brief loading delay (600ms)
+    // Step 2: Scanning records
     setTimeout(() => {
+      setLoadingProgress(60);
+      setLoadingStepText('পাবলিক রেকর্ড ও ফেসবুক UID স্ক্যান করা হচ্ছে...');
+    }, 500);
+
+    // Step 3: Verifying & final preparation
+    setTimeout(() => {
+      setLoadingProgress(90);
+      setLoadingStepText('তথ্য যাচাই ও লোড করা হচ্ছে...');
+    }, 1050);
+
+    // Step 4: Complete search (~1500ms total)
+    setTimeout(() => {
+      setLoadingProgress(100);
       setIsLoading(false);
       if (found) {
         setCurrentContact(found);
@@ -115,7 +134,7 @@ export default function App() {
         setNotFound(true);
         setHasSearched(true);
       }
-    }, 600);
+    }, 1500);
   };
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
@@ -297,9 +316,9 @@ export default function App() {
 
         {/* Loading State Indicator */}
         {isLoading && (
-          <div className="bg-[#061836] border border-sky-500/30 rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-2xl animate-fade-in relative overflow-hidden">
+          <div className="bg-[#061836] border border-sky-500/30 rounded-3xl p-8 sm:p-12 text-center space-y-5 shadow-2xl animate-fade-in relative overflow-hidden">
             {/* Ambient Animated Glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-sky-500/15 blur-3xl pointer-events-none rounded-full" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-36 bg-sky-500/15 blur-3xl pointer-events-none rounded-full" />
             
             {/* Pulsing Radar Ring & Spinner */}
             <div className="relative mx-auto w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-b from-sky-500/20 to-blue-600/10 border border-sky-500/40 text-sky-400 flex items-center justify-center shadow-[0_0_35px_rgba(0,132,255,0.35)]">
@@ -307,17 +326,28 @@ export default function App() {
             </div>
 
             <div className="space-y-1.5 max-w-sm mx-auto">
+              <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping" />
+                <span>স্ক্যানিং চলছে ({loadingProgress}%)</span>
+              </div>
+
               <h3 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-                ডাটাবেজে তথ্য খোঁজা হচ্ছে...
+                {loadingStepText}
               </h3>
-              <p className="text-xs text-slate-300">
-                পাবলিক রেকর্ড ও ফেসবুক UID সার্ভার স্ক্যান করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন
+              
+              <p className="text-xs text-slate-400">
+                লক্ষ্য: <span className="text-sky-300 font-mono font-medium">{searchedTerm}</span>
               </p>
             </div>
 
-            {/* Glowing animated progress line */}
-            <div className="max-w-xs mx-auto h-1.5 bg-[#0a2347] rounded-full overflow-hidden p-0.5 border border-[#163c70]">
-              <div className="h-full bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 rounded-full animate-pulse w-4/5 mx-auto" />
+            {/* Dynamic Animated Progress Bar */}
+            <div className="max-w-xs mx-auto space-y-1">
+              <div className="w-full h-2 bg-[#081f42] rounded-full overflow-hidden p-0.5 border border-[#163c70]">
+                <div 
+                  className="h-full bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 rounded-full transition-all duration-500 ease-out shadow-[0_0_12px_rgba(0,132,255,0.8)]"
+                  style={{ width: `${loadingProgress}%` }}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -832,6 +862,96 @@ export default function App() {
           <p className="leading-relaxed">
             <span className="font-semibold text-white">Note:</span> This tool only works with public information. We do not store any data or access private information.
           </p>
+        </div>
+
+        {/* 6. Developer API Endpoint & Telegram Access Card */}
+        <div className="bg-[#051630] border border-[#143968] hover:border-sky-500/50 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3 relative overflow-hidden transition-all">
+          {/* Subtle gradient cyan glow */}
+          <div className="absolute top-0 right-0 w-64 h-32 bg-sky-500/10 blur-3xl pointer-events-none rounded-full" />
+
+          {/* Top header row */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/30 text-sky-400 flex items-center justify-center">
+                <Code2 className="w-4 h-4" />
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-bold text-white tracking-wide uppercase font-mono">
+                  API Endpoint
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-semibold">
+                  REST API
+                </span>
+              </div>
+            </div>
+
+            {/* Telegram Action Button */}
+            <a
+              href="https://t.me/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#2AABEE] to-[#229ED9] hover:from-[#229ED9] hover:to-[#1a8fc4] active:scale-95 text-white font-bold text-xs shadow-[0_0_16px_rgba(34,158,217,0.45)] transition-all shrink-0"
+            >
+              <svg className="w-3.5 h-3.5 fill-white shrink-0" viewBox="0 0 24 24">
+                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.536-.195 1.006.128.832.946z"/>
+              </svg>
+              <span>Telegram-এ যোগাযোগ করুন</span>
+            </a>
+          </div>
+
+          {/* Description */}
+          <p className="text-xs text-slate-300 leading-relaxed font-normal">
+            আপনার ওয়েবসাইট বা অ্যাপের জন্য ডাটাবেজ API নিতে টেলিগ্রামে যোগাযোগ করুন।
+          </p>
+
+          {/* Interactive API Endpoint Box */}
+          <div className="bg-[#020b17] border border-[#0d274c] rounded-xl p-2.5 sm:p-3 flex items-center justify-between gap-2 font-mono text-xs overflow-hidden">
+            <div className="flex items-center space-x-2 min-w-0 overflow-x-auto py-0.5">
+              <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[11px] border border-emerald-500/30 shrink-0">
+                GET
+              </span>
+              <span className="text-slate-300 text-xs truncate">
+                https://api.uidfinder.org/search?q=<span className="text-sky-400 font-semibold">017XXXXXXXX</span>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleCopy('https://api.uidfinder.org/search?q=017XXXXXXXX', 'api-endpoint')}
+              className="inline-flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-[#071d3d] hover:bg-[#0c2c5c] text-slate-200 hover:text-white border border-[#143d70] text-[11px] font-sans font-medium transition-all shrink-0 active:scale-95 shadow-sm"
+              title="Copy API Endpoint"
+            >
+              {copiedKey === 'api-endpoint' ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-bold">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Feature Specs */}
+          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400 pt-0.5">
+            <span className="inline-flex items-center space-x-1 text-slate-300">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              <span>JSON Output</span>
+            </span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="inline-flex items-center space-x-1 text-slate-300">
+              <CheckCircle2 className="w-3 h-3 text-sky-400" />
+              <span>High Speed (&lt;100ms)</span>
+            </span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="inline-flex items-center space-x-1 text-slate-300">
+              <CheckCircle2 className="w-3 h-3 text-purple-400" />
+              <span>Phone &amp; UID Query Support</span>
+            </span>
+          </div>
         </div>
 
       </main>
