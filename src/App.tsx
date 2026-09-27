@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { getInitialRecordsFromRaw } from './data/rawDatabase';
 import { ContactRecord } from './types';
-import { detectBdOperator, parseFbUidInput } from './utils/fbUidExtractor';
+import { detectBdOperator, parseFbUidInput, formatBirthdayDisplay } from './utils/fbUidExtractor';
 
 export default function App() {
   const records = getInitialRecordsFromRaw();
@@ -762,9 +762,18 @@ export default function App() {
                   </div>
                   <span>Date of Birth</span>
                 </div>
-                <span className="font-mono text-white text-xs">
-                  {currentContact.birthday || '1/1/0001 12:00:00 AM'}
-                </span>
+                {(() => {
+                  const bday = formatBirthdayDisplay(currentContact.birthday);
+                  return bday.isPublic ? (
+                    <span className="font-semibold text-white text-xs sm:text-sm">
+                      {bday.text}
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 text-xs italic bg-[#04142b] px-2.5 py-0.5 rounded-lg border border-[#0d274c]">
+                      পাবলিক নয় (Not Public)
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* 12. Email Address */}

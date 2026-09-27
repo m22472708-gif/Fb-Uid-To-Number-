@@ -224,7 +224,9 @@ export function parseRawDbLine(line: string, index = 0): ContactRecord | null {
   const trimmed = line.trim();
   if (!trimmed || trimmed.startsWith('#')) return null;
 
-  const parts = trimmed.split(':');
+  // Protect internal colons in time strings like "12:00:00 AM" so they don't corrupt field indices
+  const sanitizedLine = trimmed.replace(/(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/gi, '$1.$2.$3 $4');
+  const parts = sanitizedLine.split(':');
   if (parts.length < 3) return null;
 
   const phone = parts[0]?.trim() || '';
@@ -236,8 +238,40 @@ export function parseRawDbLine(line: string, index = 0): ContactRecord | null {
   const hometown = parts[6]?.trim() || '';
   const relationshipStatus = parts[7]?.trim() || '';
   const work = parts[8]?.trim() || '';
-  const birthday = parts[9]?.trim() || '';
-  const email = parts[10]?.trim() || '';
+  
+  // Scan remaining fields for real email and birthday
+  let email = '';
+  let birthday = '';
+
+  for (let i = 9; i < parts.length; i++) {
+    const val = parts[i]?.trim();
+    if (!val) continue;
+
+    // Check if email
+    if (val.includes('@') && !email) {
+      email = val;
+      continue;
+    }
+
+    // Check if real birthday (e.g. 01/23/1996, 12/08/1991, 06/18, 08/15, 01/01)
+    // Filter out zero-dates (0001) and time flags
+    if (
+      !val.includes('0001') &&
+      !val.toLowerCase().includes('am') &&
+      !val.toLowerCase().includes('pm') &&
+      /^\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?$/.test(val)
+    ) {
+      birthday = val;
+    }
+  }
+
+  // Fallback check on parts[9] if date is not zero-date
+  if (!birthday && parts[9]) {
+    const candidate = parts[9].trim().split(' ')[0];
+    if (candidate && !candidate.includes('0001') && /^\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?$/.test(candidate)) {
+      birthday = candidate;
+    }
+  }
 
   const fullName = `${firstName} ${lastName}`.trim() || 'Unknown User';
   const banglaName = fullName.toLowerCase().includes('ehsan') 

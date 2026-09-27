@@ -113,3 +113,67 @@ export function parseFbUidInput(input: string): {
 
   return { raw, cleaned, isUrl, type };
 }
+
+/**
+ * Clean & format birthday strings nicely (e.g. "01/23/1996" -> "23 January 1996")
+ * and properly filters out zero-dates like "1/1/0001 12:00:00 AM"
+ */
+export function formatBirthdayDisplay(raw?: string): { text: string; isPublic: boolean } {
+  if (!raw) {
+    return { text: 'পাবলিক নয় (Not Public)', isPublic: false };
+  }
+
+  const clean = raw.trim();
+
+  // If it's a zero-date artifact from database
+  if (
+    clean.includes('0001') ||
+    clean.includes('12:00:00') ||
+    clean.startsWith('1/1/0001') ||
+    clean.includes('1900') ||
+    clean === '0'
+  ) {
+    return { text: 'পাবলিক নয় (Not Public)', isPublic: false };
+  }
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Try matching MM/DD/YYYY or MM/DD or DD-MM-YYYY
+  const match = clean.match(/^(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+  if (match) {
+    const part1 = parseInt(match[1], 10);
+    const part2 = parseInt(match[2], 10);
+    const yearStr = match[3];
+
+    let month = part1;
+    let day = part2;
+
+    // If first number > 12, it's day-first: DD/MM/YYYY
+    if (part1 > 12 && part2 <= 12) {
+      day = part1;
+      month = part2;
+    }
+
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const monthName = months[month - 1];
+      const dayFormatted = String(day).padStart(2, '0');
+
+      if (yearStr) {
+        let year = parseInt(yearStr, 10);
+        if (year < 100) {
+          year = year > 30 ? 1900 + year : 2000 + year;
+        }
+        if (year > 1920 && year <= 2026) {
+          return { text: `${dayFormatted} ${monthName} ${year}`, isPublic: true };
+        }
+      }
+
+      return { text: `${dayFormatted} ${monthName}`, isPublic: true };
+    }
+  }
+
+  return { text: clean, isPublic: true };
+}
